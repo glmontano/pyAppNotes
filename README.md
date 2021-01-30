@@ -37,5 +37,31 @@ With `app` now attached to WSGI - it may be passed to the web server.
 
 ## The Web Server - uWSGI
 
-A notable Python capable web server is uWSGI (I know - it looks like WSGI - but it's effectively a different thing; don't get confused!)
+A notable Python capable web server is uWSGI (I know - it looks like WSGI - but it's a web server **not** the WSGI web protocol). Since it's built for Python, it can be installed using Python's pip: `pip install uswsgi`.
+
+There are a large number of commands which you can see through `uwsgi --help`. For our purpose we're interested in the following
+
+- `--socket <IP:PORT>`: Binds the app to respond to the specified UNIX/TCP socket using default protocol
+- `--chdir <path>`: Working directory of app
+- `--wsgi-file <wsgiFileName>`: Considering the `chdir` - the name of the wsgi file
+- `--module <wsgiFileName:serverName>: Loads the WSGI module in file wsgiFileName, and the server in the file
+- `--master`: Enables the master process; complicated but recommended when running apps in production
+- `--virtualenv`: The path to the virtual Python directory
+- `--processes`: The number of processes to be used
+- `--threads`: The number of threads to be used
+
+Primitively, these commands are followed by the `uwsgi` command in the shell terminal. This is clearly cruel. Luckily uwsgi can real an `ini` file with these commands. An example for our purposes is shown below
+
+```shl
+socket=0.0.0.0:8050
+chdir=/home/gmontano/pyDash/
+wsgi-file=wsgi.py
+module=wsgi:app
+virtualenv=/home/gmontano/env/pyDash/
+processes = 1
+threads = 4
+protocol=http
+```
+
+This is contained within the file in the app's directory as `dashapp.ini` The uWSGI server is then called via `uwsgi dashapp.ini`. You may then visit `yourIPAddress:socket` to view your Python app!
 
