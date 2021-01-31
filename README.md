@@ -53,15 +53,45 @@ There are a large number of commands which you can see through `uwsgi --help`. F
 Primitively, these commands are followed by the `uwsgi` command in the shell terminal. This is clearly cruel. Luckily uwsgi can real an `ini` file with these commands. An example for our purposes is shown below
 
 ```shl
-socket=0.0.0.0:8050
-chdir=/home/gmontano/pyDash/
-wsgi-file=wsgi.py
-module=wsgi:app
-virtualenv=/home/gmontano/env/pyDash/
-processes = 1
+socket = 0.0.0.0:8050
+chdir = /home/gmontano/pyDash/
+wsgi-file = wsgi.py
+module = wsgi:app
+master = true
+virtualenv =/home/gmontano/env/pyDash/
+processes = 5
 threads = 4
-protocol=http
+protocol = http
 ```
 
 This is contained within the file in the app's directory as `dashapp.ini` The uWSGI server is then called via `uwsgi dashapp.ini`. You may then visit `yourIPAddress:socket` to view your Python app!
+
+## Wait! We need something a little more robust - NGINX!
+
+While uWSGI serves clients with the results of a Python application - there are complex interactions between the client and the server. This includes requesting for static resources, CSS and the alike. This can significantly reduce server and network load. As such - a robust, industry aged web server is required. 
+
+We'll be using NGINX, and setting it up to call the uWSGI server, which in turns calls our Python application.
+
+The `wsgi.py` file needs to changed as NGINX will be providing it with socket information. Hence the file changes form to become
+
+```shl
+chdir=/home/gmontano/pyDash/
+wsgi-file=wsgi.py
+module=wsgi:app
+master = true
+virtualenv=/home/gmontano/env/pyDash/
+processes = 5
+threads = 4
+
+socket = dashapp.sock
+chmod-socket = 660
+vacuum = true
+die-on-term = true
+```
+
+The differences are on the last four lines. Socket information will be provided by NGINX, and written into a file called `dashapp.sock`, which is an empty file. The file will have permission 660 so that NGINX can write to it. `vacuum = true` will remove the socket when the process stops. Finally we have `die-on-term = true`, so that uWSGI stops the app instead of reloading it upon closure.
+
+
+
+
 
