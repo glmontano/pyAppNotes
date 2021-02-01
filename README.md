@@ -68,7 +68,7 @@ This is contained within the file in the app's directory as `dashapp.ini` The uW
 
 ## Wait! We need something a little more robust - NGINX!
 
-While uWSGI serves clients with the results of a Python application - there are complex interactions between the client and the server. This includes requesting for static resources, CSS and the alike. This can significantly reduce server and network load. As such - a robust, industry aged web server is required. 
+While uWSGI serves clients with the results of a Python application - there are complex interactions between client and server. This includes requesting for static resources, CSS and the alike. This can significantly reduce server and network load. As such - a robust, industry aged web server is required. 
 
 We'll be using NGINX, and setting it up to call the uWSGI server, which in turns calls our Python application.
 
@@ -91,7 +91,52 @@ die-on-term = true
 
 The differences are on the last four lines. Socket information will be provided by NGINX, and written into a file called `dashapp.sock`, which is an empty file. The file will have permission 660 so that NGINX can write to it. `vacuum = true` will remove the socket when the process stops. Finally we have `die-on-term = true`, so that uWSGI stops the app instead of reloading it upon closure.
 
+NGINX needs to be used in conjunction with Supervisor. Supervisor is an application which calls upon a configuration file and executes it. We also have a Vapor application working in the background. The configuration file is located in `/etc/supervisor/conf.d`. Therein is a file called `gmBlog.conf`, where `gmBlog` is the name of my application and the parent hierarchy for my Vapor app. Within the configuration file is
 
+```shl
+[program:gmBlog]
+command=/home/gmontano/gmBlog/.build/release/Run serve --env production --port 8080 --hostname 0.0.0.0
+directory=/home/gmontano/gmBlog/
+autostart=true
+aurorestart=true
+user=root
+stdout_logfile=/var/log/supervisor/%(program_name)-stdout.log
+stderr_logfile=/var/log/supervisor/%(program_name)-stderr.log
+```
 
+Upon using `sudo supervisor start gmBlog` - Supervisor will look for configuration files in the aforementioned location and execute the contents. My Vapor app is executed through the `command`, which build the application and is available to anyone requesting port `8080`.
+
+Finally - we will use NGINX to forward calls from one port to another. Every call for the parent website through port `80`. This too is performed by ammending NGINX's configuration file locatedin `/etc/nginx/sites-enabled/default`. For my Vapor app I have
+
+```shl
+server {
+        
+        listen 80 default_server;
+        server_name 157.245.247.123;
+        root /home/gmBlog/Public/;
+
+        # Add index.php to the list if you are using PHP
+        index index.html index.htm index.nginx-debian.html;
+
+        location / {
+                try_files $uri @proxy;
+        }
+
+        location @proxy {
+                proxy_pass http://127.0.0.1:8080;
+                proxy_pass_header Server;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_pass_header Server;
+                proxy_connect_timeout 3s;
+                proxy_read_timeout 10s;
+        }
+}
+```
+
+All calls for port 8080 will be directed to `http://127.0.0.1:8080`, which by Supervisor - is the location of my Vapor app.
+
+Next we need to do something similar for our Python app. 
 
 
