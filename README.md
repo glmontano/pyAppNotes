@@ -104,7 +104,7 @@ stdout_logfile=/var/log/supervisor/%(program_name)-stdout.log
 stderr_logfile=/var/log/supervisor/%(program_name)-stderr.log
 ```
 
-Upon using `sudo supervisor start gmBlog` - Supervisor will look for configuration files in the aforementioned location and execute the contents. My Vapor app is executed through the `command`, which build the application and is available to anyone requesting port `8080`.
+Upon using `sudo supervisorctl start gmBlog` - Supervisor will look for configuration files in the aforementioned location and execute the contents. My Vapor app is executed through the `command`, which build the application and is available to anyone requesting port `8080`.
 
 Finally - we will use NGINX to forward calls from one port to another. Every call for the parent website through port `80`. This too is performed by ammending NGINX's configuration file locatedin `/etc/nginx/sites-enabled/default`. For my Vapor app I have
 
