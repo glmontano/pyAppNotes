@@ -95,7 +95,8 @@ NGINX needs to be used in conjunction with Supervisor. Supervisor is an applicat
 
 ```shl
 [program:gmBlog]
-command=/home/gmontano/gmBlog/.build/release/Run serve --env production --port 8080 --hostname 0.0.0.0
+;command=/home/gmontano/gmBlog/.build/release/Run serve --env production --port 8080 --hostname 0.0.0.0
+command=vapor run serve --env production --port 8080 --hostname 0.0.0.0
 directory=/home/gmontano/gmBlog/
 autostart=true
 aurorestart=true
@@ -105,6 +106,8 @@ stderr_logfile=/var/log/supervisor/%(program_name)-stderr.log
 ```
 
 Upon using `sudo supervisorctl start gmBlog` - Supervisor will look for configuration files in the aforementioned location and execute the contents. My Vapor app is executed through the `command`, which build the application and is available to anyone requesting port `8080`.
+
+Note that there are two `command`s with the former being commented out `;`. It appears that the original does not recompile the project when a change has been made. 
 
 Finally - we will use NGINX to forward calls from one port to another. Every call for the parent website through port `80`. This too is performed by ammending NGINX's configuration file locatedin `/etc/nginx/sites-enabled/default`. For my Vapor app I have
 
