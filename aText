@@ -1,0 +1,59 @@
+def bostonGetDistrib():
+    import requests
+
+    resultsPerPage = 100
+    totalResults = 30000
+    theUrl = f"http://registration.baa.org/2022/cf/Public/iframe_ResultsSearch.cfm?mode=results&criteria=&StoredProcParamsOn=yes&&VarGenderID=1&VarBibNumber=&VarLastName=&VarFirstName=&VarStateID=0&VarCountryOfResID=0&VarCountryOfCtzID=0&VarReportingSegID=1&VarAwardsDivID=0&VarQualClassID=0&VarCity=&VarTargetCount={totalResults}&records={resultsPerPage}&headerexists=Yes&bordersize=0&bordercolor=%23ffffff&rowcolorone=%23FFCC33&rowcolortwo=%23FFCC33&headercolor=%23ffffff&headerfontface=Verdana%2CArial%2CHelvetica%2Csans%2Dserif&headerfontcolor=%23004080&headerfontsize=12px&fontface=Verdana%2CArial%2CHelvetica%2Csans%2Dserif&fontcolor=%23000099&fontsize=10px&linkfield=FormattedSortName&linkurl=OpenDetailsWindow&linkparams=RaceAppID&queryname=SearchResults&tablefields=FullBibNumber%2CFormattedSortName%2CAgeOnRaceDay%2CGenderCode%2CCity%2CStateAbbrev%2CCountryOfResAbbrev%2CCountryOfCtzAbbrev%2CDisabilityGroup"
+
+    cookies = {
+        '_ga': 'GA1.2.918335582.1650583552',
+        '_gid': 'GA1.2.1282272097.1650583552',
+        'BIGipServerBAA_registrationpool': '372048138.20480.0000',
+        '__utmc': '50857386',
+        '__utmz': '50857386.1650583567.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none)',
+        'CFID': '3058496',
+        'CFTOKEN': '169114f6b01ad725%2D2A98D5E1%2D5254%2D008A%2D51926E41D12B26AA',
+        '__utma': '50857386.918335582.1650583552.1650588282.1650627398.3',
+    }
+
+    headers = {
+        'Connection': 'keep-alive',
+        'Cache-Control': 'max-age=0',
+        'Upgrade-Insecure-Requests': '1',
+        'Origin': 'http://registration.baa.org',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        'Referer': theUrl,
+
+        'Accept-Language': 'en-US,en;q=0.9',
+        # Requests sorts cookies= alphabetically
+        # 'Cookie': '_ga=GA1.2.918335582.1650583552; _gid=GA1.2.1282272097.1650583552; BIGipServerBAA_registrationpool=372048138.20480.0000; __utmc=50857386; __utmz=50857386.1650583567.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); CFID=3058496; CFTOKEN=169114f6b01ad725%2D2A98D5E1%2D5254%2D008A%2D51926E41D12B26AA; __utma=50857386.918335582.1650583552.1650588282.1650627398.3',
+    }
+
+    iter = 1
+    outDict = {}
+    while True:
+        data = {
+            'start': str(iter),
+            'previous': 'Previous 25 Records',
+        }
+
+        response = requests.post(theUrl, headers=headers, cookies=cookies, data=data, verify=False)
+        df_list = pd.read_html(response.content)
+
+        moveOn = False
+        print(f"Starting value is {iter}")
+        for t in df_list:
+            if "25k" in t.keys():
+                if t['30k'][3] not in outDict.keys():
+                    outDict[t['30k'][3]] = t['25k'][3]
+                #iter = int(t['30k'][3]) + 1
+                moveOn = True
+
+        iter += 10
+        #if iter > 100:
+        if not moveOn:
+            break
+
+    (pd.DataFrame.from_dict(data=outDict, orient='index')
+     .to_csv('bostonResults.csv', header=False))
