@@ -4,5 +4,9 @@ A Python Virtual Environment (venv) is created as a clean slate of libraries for
 
 ## Creating a new environment
 
-A 
+An venv may be created via Command Prompt (Windows). Assuming `PATH` contains the base Python executable location, then
+
+```shl
+python -m venv <path to new venv>
+```
 
